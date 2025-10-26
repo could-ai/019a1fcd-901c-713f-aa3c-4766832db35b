@@ -10,123 +10,133 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: "Todo App",
+      title: "Home Design App",
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
         useMaterial3: true,
       ),
-      home: const TodoListScreen(),
+      home: const HomeScreen(),
     );
   }
 }
 
-class Todo {
-  String title;
-  bool isDone;
+class HomeDesign {
+  final String id;
+  final String imageUrl;
+  final String title;
+  bool isFavorite;
 
-  Todo({required this.title, this.isDone = false});
+  HomeDesign({
+    required this.id,
+    required this.imageUrl,
+    required this.title,
+    this.isFavorite = false,
+  });
 }
 
-class TodoListScreen extends StatefulWidget {
-  const TodoListScreen({super.key});
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
 
   @override
-  State<TodoListScreen> createState() => _TodoListScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _TodoListScreenState extends State<TodoListScreen> {
-  final List<Todo> _todos = [];
-  final TextEditingController _textFieldController = TextEditingController();
+class _HomeScreenState extends State<HomeScreen> {
+  final List<HomeDesign> _designs = [
+    HomeDesign(id: "1", imageUrl: "https://picsum.photos/seed/picsum/400/400", title: "Modern Living Room"),
+    HomeDesign(id: "2", imageUrl: "https://picsum.photos/seed/picsum2/400/400", title: "Cozy Bedroom"),
+    HomeDesign(id: "3", imageUrl: "https://picsum.photos/seed/picsum3/400/400", title: "Minimalist Kitchen"),
+    HomeDesign(id: "4", imageUrl: "https://picsum.photos/seed/picsum4/400/400", title: "Bohemian Patio"),
+    HomeDesign(id: "5", imageUrl: "https://picsum.photos/seed/picsum5/400/400", title: "Rustic Dining Area"),
+    HomeDesign(id: "6", imageUrl: "https://picsum.photos/seed/picsum6/400/400", title: "Scandinavian Office"),
+  ];
 
-  void _addTodoItem(String title) {
-    if (title.isNotEmpty) {
-      setState(() {
-        _todos.add(Todo(title: title));
-      });
-      _textFieldController.clear();
-      Navigator.of(context).pop();
-    }
-  }
-
-  void _toggleTodoStatus(int index) {
+  void _toggleFavorite(String id) {
     setState(() {
-      _todos[index].isDone = !_todos[index].isDone;
+      final design = _designs.firstWhere((d) => d.id == id);
+      design.isFavorite = !design.isFavorite;
     });
   }
 
-  void _deleteTodoItem(int index) {
+  void _addDesign() {
     setState(() {
-      _todos.removeAt(index);
+      final newId = (_designs.length + 1).toString();
+      _designs.add(
+        HomeDesign(
+          id: newId,
+          imageUrl: "https://picsum.photos/seed/picsum${newId}/400/400",
+          title: "New User Design",
+        ),
+      );
     });
-  }
-
-  Future<void> _displayDialog() async {
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false, // user must tap button!
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Add a new todo item"),
-          content: TextField(
-            controller: _textFieldController,
-            decoration: const InputDecoration(hintText: "Enter task here"),
-            autofocus: true,
-            onSubmitted: (value) => _addTodoItem(value),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text("Cancel"),
-              onPressed: () {
-                _textFieldController.clear();
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: const Text("Add"),
-              onPressed: () => _addTodoItem(_textFieldController.text),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Todo List"),
+        title: const Text("Home Design Gallery"),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
-      body: ListView.builder(
-        itemCount: _todos.length,
+      body: GridView.builder(
+        padding: const EdgeInsets.all(8.0),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 8.0,
+          mainAxisSpacing: 8.0,
+          childAspectRatio: 0.8,
+        ),
+        itemCount: _designs.length,
         itemBuilder: (context, index) {
-          final todo = _todos[index];
-          return ListTile(
-            leading: Checkbox(
-              value: todo.isDone,
-              onChanged: (bool? value) {
-                _toggleTodoStatus(index);
-              },
-            ),
-            title: Text(
-              todo.title,
-              style: TextStyle(
-                decoration: todo.isDone ? TextDecoration.lineThrough : null,
-              ),
-            ),
-            trailing: IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: () => _deleteTodoItem(index),
+          final design = _designs[index];
+          return Card(
+            clipBehavior: Clip.antiAlias,
+            elevation: 4.0,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Image.network(
+                    design.imageUrl,
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Center(child: Icon(Icons.error));
+                    },
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          design.title,
+                          style: Theme.of(context).textTheme.titleSmall,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          design.isFavorite ? Icons.favorite : Icons.favorite_border,
+                          color: design.isFavorite ? Colors.red : Colors.grey,
+                        ),
+                        onPressed: () => _toggleFavorite(design.id),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           );
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _displayDialog,
-        tooltip: "Add Item",
-        child: const Icon(Icons.add),
+        onPressed: _addDesign,
+        tooltip: "Post your design",
+        child: const Icon(Icons.add_a_photo),
       ),
     );
   }
